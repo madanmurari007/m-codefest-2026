@@ -13,10 +13,10 @@ import OpenAI from "openai";
  * built-in fallback path.
  */
 export function getOpenAI(): OpenAI | null {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
   if (!apiKey) return null;
 
-  const baseURL = process.env.OPENAI_BASE_URL;
+  const baseURL = process.env.NEXT_PUBLIC_OPENAI_BASE_URL;
   return new OpenAI({
     apiKey,
     ...(baseURL ? { baseURL } : {}),
@@ -25,12 +25,12 @@ export function getOpenAI(): OpenAI | null {
 
 /** Model name to use for chat completions. Override with OPENAI_MODEL. */
 export function getModel(): string {
-  return process.env.OPENAI_MODEL || "gpt-4o";
+  return process.env.NEXT_PUBLIC_OPENAI_MODEL || "gpt-4o";
 }
 
 /** Logs OpenAI/LiteLLM errors verbosely on the server. Safe — never logs the API key. */
 export function logOpenAIError(label: string, err: unknown) {
-  const baseURL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1 (default)";
+  const baseURL = process.env.NEXT_PUBLIC_OPENAI_BASE_URL || "https://api.openai.com/v1 (default)";
   const model = getModel();
   if (err instanceof OpenAI.APIError) {
     console.error(
