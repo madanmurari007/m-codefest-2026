@@ -3,7 +3,12 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm install
+        - npm ci
+        # Pipe Amplify Console env vars into .env.production so Next.js
+        # (server runtime + API routes) can read them via process.env.
+        - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.production
+        - echo "NEXT_PUBLIC_OPENAI_BASE_URL=$NEXT_PUBLIC_OPENAI_BASE_URL" >> .env.production
+        - echo "NEXT_PUBLIC_OPENAI_MODEL=$NEXT_PUBLIC_OPENAI_MODEL" >> .env.production
     build:
       commands:
         - npm run build
@@ -14,3 +19,4 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+      - .next/cache/**/*

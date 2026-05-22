@@ -57,16 +57,19 @@ export async function POST(request: NextRequest) {
 
   const openai = getOpenAI();
   if (!openai) {
+    // No vision available — assume valid and use fallback analysis.
     return Response.json({
+      valid: true,
       analysis: fallbackByUrl(imageUrl),
       source: "fallback-no-key",
     });
   }
 
   try {
-    const imageContent: OpenAI.Chat.Completions.ChatCompletionContentPart = imageUrl.startsWith("data:")
-      ? { type: "image_url", image_url: { url: imageUrl, detail: "low" } }
-      : { type: "image_url", image_url: { url: imageUrl, detail: "low" } };
+    const imageContent: OpenAI.Chat.Completions.ChatCompletionContentPart = {
+      type: "image_url",
+      image_url: { url: imageUrl, detail: "low" },
+    };
 
     const completion = await openai.chat.completions.create({
       model: getModel(),
@@ -74,42 +77,63 @@ export async function POST(request: NextRequest) {
         {
           role: "system",
           content:
-            "You are a travel vibe analyst. Analyze images and extract travel-related attributes. Respond ONLY with valid JSON.",
+            "You are a travel vibe analyst. You first verify whether an image depicts a travel-worthy place (a destination, landscape, landmark, city, building, hotel, beach, mountain, forest, etc.), then extract travel attributes if it does. Respond ONLY with valid JSON.",
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Analyze this travel/destination image and extract:
-1. mood: The overall feeling/vibe (e.g., "Relaxing & Tropical", "Adventurous & Majestic")
-2. scenery: Array of scenery tags (e.g., ["beach", "tropical", "ocean"])
-3. activities: Array of suggested activities (e.g., ["swimming", "snorkeling"])
-4. description: A 2-3 sentence evocative description of the travel vibe
+              text: `First, decide if this image clearly depicts a travel destination or place (scenery, landmark, city, building, nature, hotel, etc.). Reject selfies, portraits, indoor selfies, documents, screenshots, food close-ups, memes, abstract art, blank/blurry photos, or any image that does not represent a real-world location someone could travel to.
 
-Respond as JSON: {"mood":"...","scenery":[...],"activities":[...],"description":"..."}`,
+If it IS a valid place, respond as JSON:
+{"valid": true, "mood": "...", "scenery": ["..."], "activities": ["..."], "description": "2-3 evocative sentences"}
+
+If it is NOT a valid place, respond as JSON:
+{"valid": false, "reason": "<one short, friendly sentence telling the user what's wrong and asking them to upload a destination photo>"}`,
             },
             imageContent,
           ],
         },
       ],
-      max_tokens: 300,
+      max_tokens: 320,
     });
 
     const text = completion.choices[0].message.content || "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const analysis = JSON.parse(jsonMatch[0]);
-      return Response.json({ analysis, source: "llm" });
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      if (parsed.valid === false) {
+        return Response.json({
+          valid: false,
+          reason:
+            typeof parsed.reason === "string" && parsed.reason.trim()
+              ? parsed.reason
+              : "That doesn't look like a travel destination. Please upload a photo of a place, landscape, or landmark.",
+          source: "llm",
+        });
+      }
+
+      const { mood, scenery, activities, description } = parsed;
+      if (mood && Array.isArray(scenery) && Array.isArray(activities) && description) {
+        return Response.json({
+          valid: true,
+          analysis: { mood, scenery, activities, description },
+          source: "llm",
+        });
+      }
     }
 
     return Response.json({
+      valid: true,
       analysis: fallbackByUrl(imageUrl),
       source: "fallback-no-json",
     });
   } catch (err) {
     logOpenAIError("analyze-image", err);
     return Response.json({
+      valid: true,
       analysis: fallbackByUrl(imageUrl),
       source: "fallback-error",
     });

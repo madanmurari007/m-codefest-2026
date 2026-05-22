@@ -10,6 +10,7 @@ import {
   X,
   Globe,
   MapPin,
+  AlertTriangle,
 } from "lucide-react";
 import HotelCard from "@/components/HotelCard";
 import type { ChatHotelRec } from "@/lib/types";
@@ -186,7 +187,9 @@ export default function ImageTripPage() {
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
   const [nearby, setNearby] = useState<NearbyResult | null>(null);
   const [detectingNearby, setDetectingNearby] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   /** Build the chat prompt from the AI vibe analysis + an optional filter. */
   const buildPrompt = useCallback(
@@ -247,6 +250,7 @@ export default function ImageTripPage() {
       setAnalysis(null);
       setRecommendations([]);
       setActiveRegion(null);
+      setValidationError(null);
 
       let analysisData: ImageAnalysis;
       try {
@@ -256,6 +260,19 @@ export default function ImageTripPage() {
           body: JSON.stringify({ imageUrl }),
         });
         const data = await response.json();
+
+        // Image rejected by the verifier — show error and reset state.
+        if (data && data.valid === false) {
+          setValidationError(
+            typeof data.reason === "string" && data.reason.trim()
+              ? data.reason
+              : "That doesn't look like a travel destination. Please upload a photo of a place, landscape, or landmark.",
+          );
+          setImage(null);
+          setAnalyzing(false);
+          return;
+        }
+
         analysisData = data.analysis;
       } catch {
         analysisData = {
@@ -276,6 +293,8 @@ export default function ImageTripPage() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Allow re-selecting the same file later by clearing the input value.
+    e.target.value = "";
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -343,6 +362,29 @@ export default function ImageTripPage() {
         >
           {!image ? (
             <div className="mx-auto max-w-2xl">
+              <AnimatePresence>
+                {validationError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                    role="alert"
+                  >
+                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{validationError}</span>
+                    <button
+                      type="button"
+                      onClick={() => setValidationError(null)}
+                      aria-label="Dismiss"
+                      className="rounded p-0.5 text-red-700 hover:bg-red-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div
                 onClick={() => fileInputRef.current?.click()}
                 className="group cursor-pointer rounded-2xl border-2 border-dashed border-border bg-muted/30 p-12 text-center transition-all hover:border-amber-400 hover:bg-amber-50/50"
@@ -364,6 +406,34 @@ export default function ImageTripPage() {
                   className="hidden"
                 />
               </div>
+
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  on mobile
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cameraInputRef.current?.click();
+                }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-stone-900 bg-stone-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-black"
+              >
+                <Camera className="h-4 w-4" />
+                Take a photo
+              </button>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
 
               <div className="mt-8">
                 <p className="text-center text-sm font-medium text-muted-foreground">
