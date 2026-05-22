@@ -13,7 +13,7 @@ import OpenAI from "openai";
  * built-in fallback path.
  */
 export function getOpenAI(): OpenAI | null {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
   const baseURL = process.env.NEXT_PUBLIC_OPENAI_BASE_URL;
