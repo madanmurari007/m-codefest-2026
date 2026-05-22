@@ -1,8 +1,27 @@
+export type HotelTier = "Signature" | "Premium" | "Comfort" | "Extended";
+
+export type Vibe =
+  | "romantic"
+  | "adventure"
+  | "wellness"
+  | "cultural"
+  | "urban"
+  | "nature"
+  | "tropical"
+  | "mountain"
+  | "desert"
+  | "arctic"
+  | "safari"
+  | "wine"
+  | "foodie"
+  | "serene"
+  | "vibrant"
+  | "scenic";
+
 export interface Hotel {
   id: string;
   name: string;
-  brand: string;
-  tier: "Luxury" | "Premium" | "Select" | "Longer Stays";
+  tier: HotelTier;
   location: string;
   city: string;
   country: string;
@@ -15,9 +34,15 @@ export interface Hotel {
   currency: string;
   amenities: string[];
   tags: string[];
+  vibe: string;
   coordinates: { lat: number; lng: number };
-  bonvoyPointsPerNight: number;
   roomTypes: RoomType[];
+  /**
+   * Short live status messages (e.g. "Pool under maintenance Nov 18–22",
+   * "Rooms beside the ballroom unavailable due to a wedding") displayed under
+   * the amenities section. Optional; AI-generated cards may populate it.
+   */
+  temporaryNotices?: string[];
 }
 
 export interface RoomType {
@@ -54,12 +79,32 @@ export interface MoodCategory {
   gradient: string;
 }
 
+/**
+ * A single hotel recommendation returned alongside an assistant chat message.
+ * Carries both the canonical Hotel record and AI-crafted per-card text so the
+ * UI can render unique copy for every card.
+ */
+export interface ChatHotelRec {
+  hotel: Hotel;
+  /** Short one-liner headline shown above the hotel card body. */
+  headline?: string;
+  /** A 1-2 sentence "why this matches" tailored to the user's request. */
+  reason?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  hotels?: Hotel[];
+  /** Per-card AI-tailored hotel recommendations returned by /api/chat. */
+  recommendations?: ChatHotelRec[];
+  /**
+   * Optional region chips the assistant suggests when the user's ask was
+   * broad (no specific country/region). Clicking a chip triggers a regional
+   * follow-up query.
+   */
+  suggestedRegions?: string[];
 }
 
 export interface BookingDetails {
@@ -69,7 +114,6 @@ export interface BookingDetails {
   checkOut: string;
   guests: number;
   totalPrice: number;
-  bonvoyPoints: number;
 }
 
 export interface ImageAnalysis {

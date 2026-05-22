@@ -70,7 +70,7 @@ export default function VoiceButton({ onTranscript }: VoiceButtonProps) {
       className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
         listening
           ? "bg-red-500 text-white"
-          : "bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600"
+          : "bg-muted text-muted-foreground hover:bg-amber-100 hover:text-amber-700"
       }`}
       title={listening ? "Stop listening" : "Voice input"}
     >

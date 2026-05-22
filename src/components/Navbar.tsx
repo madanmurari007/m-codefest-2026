@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass,
   MessageSquare,
-  Camera,
   Menu,
   X,
   Sparkles,
@@ -15,7 +14,6 @@ import {
 
 const navLinks = [
   { href: "/discover", label: "Discover", icon: Compass },
-  { href: "/image-trip", label: "Image to Trip", icon: Camera },
   { href: "/chat", label: "AI Planner", icon: MessageSquare },
 ];
 
@@ -26,9 +24,9 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <Sparkles className="h-7 w-7 text-blue-500" />
+          <Sparkles className="h-7 w-7 text-amber-700" />
           <span className="text-xl font-bold tracking-tight">
-            Wanderlust<span className="text-blue-500">AI</span>
+            Wanderlust<span className="text-amber-700">AI</span>
           </span>
         </Link>
 
@@ -47,14 +45,19 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           <Link
-            href="/booking"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            href="/chat"
+            className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-black"
           >
             Book Now
           </Link>
-          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-blue-100 hover:text-blue-600">
+          <Link
+            href="/login"
+            aria-label="Sign in"
+            title="Sign in"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-amber-100 hover:text-amber-700"
+          >
             <User className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
 
         <button
@@ -86,11 +89,19 @@ export default function Navbar() {
                 </Link>
               ))}
               <Link
-                href="/booking"
+                href="/chat"
                 onClick={() => setOpen(false)}
-                className="mt-2 rounded-lg bg-blue-600 px-4 py-3 text-center text-sm font-medium text-white"
+                className="mt-2 rounded-lg bg-stone-900 px-4 py-3 text-center text-sm font-medium text-white"
               >
                 Book Now
+              </Link>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <User className="h-4 w-4" />
+                Sign in
               </Link>
             </div>
           </motion.div>

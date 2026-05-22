@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -12,12 +12,72 @@ import {
   Bed,
   Maximize,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { hotels } from "@/lib/hotels";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import BookingNudge from "@/components/BookingNudge";
-import PointsCalculator from "@/components/PointsCalculator";
-import BonvoyEnrollment from "@/components/BonvoyEnrollment";
+import AmenityHover from "@/components/AmenityHover";
+import type { Hotel, RoomType } from "@/lib/types";
+
+const AI_HOTEL_STORAGE_PREFIX = "ai-hotel:";
+
+/**
+ * Module-level cache. `useSyncExternalStore` compares the result of
+ * `getSnapshot` with `Object.is`; without caching we'd parse JSON on every
+ * call and return a fresh object, triggering the "result of getSnapshot
+ * should be cached to avoid an infinite loop" error.
+ */
+const aiHotelCache = new Map<string, Hotel | null>();
+
+function loadAIHotelCached(id: string): Hotel | null {
+  if (typeof window === "undefined") return null;
+  if (aiHotelCache.has(id)) return aiHotelCache.get(id) ?? null;
+  let parsed: Hotel | null = null;
+  try {
+    const raw = sessionStorage.getItem(`${AI_HOTEL_STORAGE_PREFIX}${id}`);
+    parsed = raw ? (JSON.parse(raw) as Hotel) : null;
+  } catch {
+    parsed = null;
+  }
+  aiHotelCache.set(id, parsed);
+  return parsed;
+}
+
+/** Stable no-op subscribe (the AI snapshot never changes after first read). */
+const noopSubscribe = () => () => {};
+
+/**
+ * AI hotels arrive without rooms. Synthesize two plausible room rows so the
+ * detail page renders uniformly between catalog and AI-generated stays.
+ */
+function synthesizeRooms(hotel: Hotel): RoomType[] {
+  const base = hotel.pricePerNight;
+  return [
+    {
+      id: `${hotel.id}-r1`,
+      name: "Signature Room",
+      description: `Comfortable signature room at ${hotel.name} with all the on-property essentials.`,
+      pricePerNight: base,
+      maxGuests: 2,
+      bedType: "King",
+      size: "40 sqm",
+      image: hotel.image,
+      amenities: hotel.amenities.slice(0, 4),
+    },
+    {
+      id: `${hotel.id}-r2`,
+      name: "Suite",
+      description: `Upgraded suite with a larger layout and elevated amenities.`,
+      pricePerNight: Math.round(base * 1.65),
+      maxGuests: 3,
+      bedType: "King + Sofa",
+      size: "75 sqm",
+      image: hotel.image,
+      amenities: hotel.amenities.slice(0, 6),
+    },
+  ];
+}
 
 export default function HotelDetailPage({
   params,
@@ -25,35 +85,85 @@ export default function HotelDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const hotel = hotels.find((h) => h.id === id);
+  const isAi = id.startsWith("ai-");
+
+  const catalogHotel = useMemo(
+    () => (isAi ? null : hotels.find((h) => h.id === id) ?? null),
+    [id, isAi],
+  );
+
+  // Read the AI hotel out of sessionStorage on the client only — avoids
+  // hydration mismatches and the set-state-in-effect lint rule.
+  // The snapshot is memoized in `aiHotelCache` so React's Object.is check
+  // sees a stable reference (otherwise: "result of getSnapshot should be
+  // cached to avoid an infinite loop").
+  const aiHotel = useSyncExternalStore(
+    noopSubscribe,
+    () => (isAi ? loadAIHotelCached(id) : null),
+    () => null,
+  );
+  /**
+   * True once we're definitely running on the client. Boolean primitives
+   * are always Object.is-equal so no caching is needed here.
+   */
+  const aiLoaded =
+    useSyncExternalStore(
+      noopSubscribe,
+      () => true,
+      () => false,
+    ) || !isAi;
+
+  const hotel = catalogHotel ?? aiHotel;
+
   const [selectedRoom, setSelectedRoom] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
 
   if (!hotel) {
+    if (!aiLoaded) {
+      return (
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center text-muted-foreground">Loading…</div>
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Hotel not found</h1>
-          <Link href="/discover" className="mt-4 text-blue-600 hover:underline">
-            Browse all destinations
-          </Link>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+            This stay was generated for a recent chat session. Reopen the
+            recommendation from your chat to view it again.
+          </p>
+          <div className="mt-4 flex justify-center gap-3">
+            <Link href="/chat" className="text-amber-700 hover:underline">
+              Back to AI planner
+            </Link>
+            <Link href="/discover" className="text-amber-700 hover:underline">
+              Browse all destinations
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  const room = hotel.roomTypes[selectedRoom];
+  // AI hotels arrive with empty roomTypes — synthesize defaults so the
+  // booking column and room list still render meaningfully.
+  const roomTypes =
+    hotel.roomTypes.length > 0 ? hotel.roomTypes : synthesizeRooms(hotel);
+  const room = roomTypes[selectedRoom];
+  const galleryImages = hotel.images.length > 0 ? hotel.images : [hotel.image];
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back */}
         <Link
-          href="/discover"
+          href={isAi ? "/chat" : "/discover"}
           className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Discover
+          {isAi ? "Back to AI planner" : "Back to Discover"}
         </Link>
 
         {/* Gallery */}
@@ -64,19 +174,19 @@ export default function HotelDetailPage({
         >
           <div className="sm:col-span-2">
             <img
-              src={hotel.images[selectedImage]}
+              src={galleryImages[selectedImage] ?? hotel.image}
               alt={hotel.name}
               className="h-72 w-full rounded-2xl object-cover sm:h-96"
             />
           </div>
           <div className="flex gap-2 sm:flex-col">
-            {hotel.images.map((img, i) => (
+            {galleryImages.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setSelectedImage(i)}
                 className={`flex-1 overflow-hidden rounded-xl transition-all ${
                   selectedImage === i
-                    ? "ring-2 ring-blue-500"
+                    ? "ring-2 ring-amber-600"
                     : "opacity-70 hover:opacity-100"
                 }`}
               >
@@ -98,12 +208,17 @@ export default function HotelDetailPage({
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-center gap-3">
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                  {hotel.brand}
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                  {hotel.vibe}
                 </span>
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                   {hotel.tier}
                 </span>
+                {isAi && (
+                  <span className="rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700">
+                    AI curated
+                  </span>
+                )}
               </div>
 
               <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
@@ -131,31 +246,60 @@ export default function HotelDetailPage({
               {/* Amenities */}
               <div className="mt-8">
                 <h2 className="text-xl font-semibold">Amenities</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Hover any amenity for an inside look.
+                </p>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {hotel.amenities.map((amenity) => (
-                    <div
-                      key={amenity}
-                      className="flex items-center gap-2 rounded-lg bg-muted p-3"
-                    >
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{amenity}</span>
-                    </div>
+                    <AmenityHover key={amenity} amenity={amenity}>
+                      <div className="flex items-center gap-2 rounded-lg bg-muted p-3 transition-colors hover:bg-amber-50 cursor-default">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">{amenity}</span>
+                      </div>
+                    </AmenityHover>
                   ))}
                 </div>
               </div>
+
+              {/* Live status */}
+              {hotel.temporaryNotices && hotel.temporaryNotices.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="flex items-center gap-2 text-xl font-semibold">
+                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                    Live property status
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    A few things are temporarily unavailable during your stay.
+                  </p>
+                  <ul className="mt-4 space-y-2">
+                    {hotel.temporaryNotices.map((notice) => (
+                      <li
+                        key={notice}
+                        className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50/70 p-3 text-sm text-orange-900"
+                      >
+                        <span
+                          aria-hidden
+                          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500"
+                        />
+                        <span>{notice}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Room Types */}
               <div className="mt-8">
                 <h2 className="text-xl font-semibold">Room Types</h2>
                 <div className="mt-4 space-y-4">
-                  {hotel.roomTypes.map((rt, i) => (
+                  {roomTypes.map((rt, i) => (
                     <button
                       key={rt.id}
                       onClick={() => setSelectedRoom(i)}
                       className={`w-full rounded-2xl border p-4 text-left transition-all ${
                         selectedRoom === i
-                          ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                          : "border-border hover:border-blue-300"
+                          ? "border-amber-600 bg-amber-50 ring-1 ring-amber-600"
+                          : "border-border hover:border-amber-300"
                       }`}
                     >
                       <div className="flex gap-4">
@@ -188,7 +332,7 @@ export default function HotelDetailPage({
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-bold">
-                            {formatCurrency(rt.pricePerNight)}
+                            {formatCurrency(rt.pricePerNight, hotel.currency)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             / night
@@ -215,13 +359,13 @@ export default function HotelDetailPage({
                 <div className="flex items-baseline justify-between">
                   <div>
                     <span className="text-3xl font-bold">
-                      {formatCurrency(room.pricePerNight)}
+                      {formatCurrency(room.pricePerNight, hotel.currency)}
                     </span>
                     <span className="text-muted-foreground"> / night</span>
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-blue-600">
+                  <div className="flex items-center gap-1 text-sm text-amber-700">
                     <Sparkles className="h-3.5 w-3.5" />
-                    {formatNumber(hotel.bonvoyPointsPerNight)} pts
+                    Best rate
                   </div>
                 </div>
 
@@ -229,24 +373,27 @@ export default function HotelDetailPage({
                   {room.name}
                 </div>
 
-                <Link
-                  href={`/booking?hotel=${hotel.id}&room=${room.id}`}
-                  className="mt-4 block w-full rounded-xl bg-blue-600 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                >
-                  Book This Room
-                </Link>
+                {isAi ? (
+                  <button
+                    disabled
+                    title="AI-curated property — booking is a demo only"
+                    className="mt-4 block w-full cursor-not-allowed rounded-xl bg-stone-900/80 py-3.5 text-center text-sm font-semibold text-white"
+                  >
+                    Inquire to Book
+                  </button>
+                ) : (
+                  <Link
+                    href={`/booking?hotel=${hotel.id}&room=${room.id}`}
+                    className="mt-4 block w-full rounded-xl bg-stone-900 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-black"
+                  >
+                    Book This Room
+                  </Link>
+                )}
 
                 <p className="mt-3 text-center text-xs text-muted-foreground">
                   Free cancellation up to 48 hours before check-in
                 </p>
               </div>
-
-              <PointsCalculator
-                pointsPerNight={hotel.bonvoyPointsPerNight}
-                pricePerNight={room.pricePerNight}
-              />
-
-              <BonvoyEnrollment />
             </motion.div>
           </div>
         </div>

@@ -3,36 +3,24 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Camera,
   MessageSquare,
   Compass,
   Sparkles,
   ArrowRight,
-  Star,
   Globe,
   Shield,
-  Mic,
 } from "lucide-react";
 import { hotels } from "@/lib/hotels";
 import HotelCard from "@/components/HotelCard";
-import BonvoyEnrollment from "@/components/BonvoyEnrollment";
 
 const features = [
-  {
-    icon: Camera,
-    title: "Image to Trip",
-    description:
-      "Upload any photo and our AI will find destinations that match the vibe.",
-    href: "/image-trip",
-    gradient: "from-pink-500 to-rose-600",
-  },
   {
     icon: MessageSquare,
     title: "AI Trip Planner",
     description:
-      "Chat naturally to plan your perfect trip — dates, budget, activities, all handled.",
+      "Chat, speak, or upload a photo — one AI assistant handles dates, budget, activities, and more.",
     href: "/chat",
-    gradient: "from-blue-500 to-indigo-600",
+    gradient: "from-stone-800 to-stone-950",
   },
   {
     icon: Compass,
@@ -40,34 +28,26 @@ const features = [
     description:
       "Browse destinations by mood — romance, adventure, wellness, culture, and more.",
     href: "/discover",
-    gradient: "from-purple-500 to-violet-600",
-  },
-  {
-    icon: Mic,
-    title: "Voice Booking",
-    description:
-      "Book hands-free with voice commands. Just say what you want and we'll handle the rest.",
-    href: "/chat",
-    gradient: "from-teal-500 to-emerald-600",
+    gradient: "from-amber-700 to-stone-900",
   },
 ];
 
 const stats = [
   { value: "8,000+", label: "Properties Worldwide" },
-  { value: "200M+", label: "Bonvoy Members" },
   { value: "139", label: "Countries & Territories" },
-  { value: "30+", label: "World-Class Brands" },
+  { value: "50", label: "Curated Vibes" },
+  { value: "4.8★", label: "Average Guest Rating" },
 ];
 
 export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 px-4 py-24 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-stone-950 to-black px-4 py-24 sm:px-6 lg:px-8">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-purple-500/20 blur-3xl" />
-          <div className="absolute left-1/2 top-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/10 blur-3xl" />
+          <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-amber-500/20 blur-3xl" />
+          <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-amber-500/20 blur-3xl" />
+          <div className="absolute left-1/2 top-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-600/10 blur-3xl" />
         </div>
 
         <div className="relative mx-auto max-w-5xl text-center">
@@ -76,7 +56,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-blue-200 backdrop-blur">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-amber-100 backdrop-blur">
               <Sparkles className="h-4 w-4" />
               Powered by AI — Reimagine How You Travel
             </div>
@@ -86,27 +66,27 @@ export default function HomePage() {
               <span className="gradient-text">One Photo Away</span>
             </h1>
 
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-blue-100/80 sm:text-xl">
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-amber-50/80 sm:text-xl">
               Upload a photo, describe a vibe, or just chat — our AI finds your
               perfect destination and books it directly. No OTAs, no markups,
-              maximum Bonvoy points.
+              just better stays.
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                href="/image-trip"
-                className="group flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-600/30"
-              >
-                <Camera className="h-5 w-5" />
-                Try Image to Trip
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
                 href="/chat"
-                className="flex items-center gap-2 rounded-xl bg-white/10 px-8 py-4 text-lg font-semibold text-white backdrop-blur transition-all hover:bg-white/20"
+                className="group flex items-center gap-2 rounded-xl bg-stone-900 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-stone-900/25 transition-all hover:bg-stone-800 hover:shadow-xl hover:shadow-stone-900/30"
               >
                 <MessageSquare className="h-5 w-5" />
                 Chat with AI Planner
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/discover"
+                className="flex items-center gap-2 rounded-xl bg-white/10 px-8 py-4 text-lg font-semibold text-white backdrop-blur transition-all hover:bg-white/20"
+              >
+                <Compass className="h-5 w-5" />
+                Explore Destinations
               </Link>
             </div>
           </motion.div>
@@ -141,16 +121,16 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Four Ways to Find Your{" "}
+              Two Ways to Find Your{" "}
               <span className="gradient-text">Perfect Stay</span>
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Whether you think in images, words, moods, or voice — we speak
-              your language.
+              Whether you want to chat, speak, share a photo, or browse by mood
+              — we speak your language.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -172,7 +152,7 @@ export default function HomePage() {
                   <p className="mt-2 flex-1 text-sm text-muted-foreground">
                     {feature.description}
                   </p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-medium text-blue-600 transition-all group-hover:gap-2">
+                  <div className="mt-4 flex items-center gap-1 text-sm font-medium text-amber-700 transition-all group-hover:gap-2">
                     Try it now <ArrowRight className="h-4 w-4" />
                   </div>
                 </Link>
@@ -196,7 +176,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/discover"
-              className="hidden items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 sm:flex"
+              className="hidden items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 sm:flex"
             >
               View all <ArrowRight className="h-4 w-4" />
             </Link>
@@ -211,7 +191,7 @@ export default function HomePage() {
           <div className="mt-8 text-center sm:hidden">
             <Link
               href="/discover"
-              className="inline-flex items-center gap-1 text-sm font-medium text-blue-600"
+              className="inline-flex items-center gap-1 text-sm font-medium text-amber-700"
             >
               View all properties <ArrowRight className="h-4 w-4" />
             </Link>
@@ -231,8 +211,8 @@ export default function HomePage() {
             {[
               {
                 icon: Sparkles,
-                title: "Maximum Points",
-                desc: "Earn the most Bonvoy points when you book through our direct channel.",
+                title: "Personalized Picks",
+                desc: "Our AI matches your vibe to properties you'll actually love — not just the loudest listings.",
               },
               {
                 icon: Shield,
@@ -253,7 +233,7 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 className="rounded-2xl border border-border bg-card p-6 text-center"
               >
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
                   <item.icon className="h-6 w-6" />
                 </div>
                 <h3 className="mt-4 font-semibold">{item.title}</h3>
@@ -264,21 +244,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Bonvoy Enrollment */}
-      <section className="bg-muted/30 py-16 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-xl">
-          <BonvoyEnrollment />
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="border-t border-border bg-card py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-500" />
+              <Sparkles className="h-5 w-5 text-amber-700" />
               <span className="font-bold">
-                Wanderlust<span className="text-blue-500">AI</span>
+                Wanderlust<span className="text-amber-700">AI</span>
               </span>
             </div>
             <p className="text-sm text-muted-foreground">

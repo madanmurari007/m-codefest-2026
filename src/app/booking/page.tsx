@@ -17,7 +17,6 @@ import {
 import { hotels } from "@/lib/hotels";
 import {
   formatCurrency,
-  formatNumber,
   calculateNights,
   getDefaultCheckIn,
   getDefaultCheckOut,
@@ -42,7 +41,6 @@ function BookingContent() {
   const subtotal = room.pricePerNight * nights;
   const taxes = Math.round(subtotal * 0.13);
   const total = subtotal + taxes;
-  const totalPoints = hotel.bonvoyPointsPerNight * nights;
 
   if (confirmed) {
     return (
@@ -77,13 +75,13 @@ function BookingContent() {
             </div>
             <div className="flex justify-between border-t border-border pt-2">
               <span className="font-medium">Total</span>
-              <span className="font-bold">{formatCurrency(total)}</span>
+              <span className="font-bold">{formatCurrency(total, hotel.currency)}</span>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-purple-50 p-3 text-sm text-purple-700">
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
             <Sparkles className="h-4 w-4" />
-            You earned {formatNumber(totalPoints)} Bonvoy points!
+            A confirmation email is on its way. Safe travels!
           </div>
         </div>
 
@@ -96,7 +94,7 @@ function BookingContent() {
           </Link>
           <Link
             href="/discover"
-            className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="flex-1 rounded-xl bg-stone-900 py-3 text-sm font-medium text-white transition-colors hover:bg-black"
           >
             Explore More
           </Link>
@@ -135,7 +133,7 @@ function BookingContent() {
             className="rounded-2xl border border-border bg-card p-6"
           >
             <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <Calendar className="h-5 w-5 text-blue-500" />
+              <Calendar className="h-5 w-5 text-amber-700" />
               Stay Details
             </h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -147,7 +145,7 @@ function BookingContent() {
                   type="date"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
               <div>
@@ -158,7 +156,7 @@ function BookingContent() {
                   type="date"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
               <div>
@@ -168,7 +166,7 @@ function BookingContent() {
                 <select
                   value={guests}
                   onChange={(e) => setGuests(Number(e.target.value))}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 >
                   {Array.from({ length: room.maxGuests }, (_, i) => i + 1).map(
                     (n) => (
@@ -190,7 +188,7 @@ function BookingContent() {
             className="rounded-2xl border border-border bg-card p-6"
           >
             <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <Users className="h-5 w-5 text-blue-500" />
+              <Users className="h-5 w-5 text-amber-700" />
               Guest Information
             </h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -201,7 +199,7 @@ function BookingContent() {
                 <input
                   type="text"
                   placeholder="John"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
               <div>
@@ -211,7 +209,7 @@ function BookingContent() {
                 <input
                   type="text"
                   placeholder="Doe"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
               <div>
@@ -221,7 +219,7 @@ function BookingContent() {
                 <input
                   type="email"
                   placeholder="john@example.com"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
               <div>
@@ -231,7 +229,7 @@ function BookingContent() {
                 <input
                   type="tel"
                   placeholder="+1 (555) 000-0000"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
             </div>
@@ -245,7 +243,7 @@ function BookingContent() {
             className="rounded-2xl border border-border bg-card p-6"
           >
             <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <CreditCard className="h-5 w-5 text-blue-500" />
+              <CreditCard className="h-5 w-5 text-amber-700" />
               Payment Details
             </h2>
             <div className="mt-4 space-y-4">
@@ -256,7 +254,7 @@ function BookingContent() {
                 <input
                   type="text"
                   placeholder="4242 4242 4242 4242"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -267,7 +265,7 @@ function BookingContent() {
                   <input
                     type="text"
                     placeholder="MM/YY"
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
                 <div>
@@ -277,7 +275,7 @@ function BookingContent() {
                   <input
                     type="text"
                     placeholder="123"
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
               </div>
@@ -318,31 +316,30 @@ function BookingContent() {
             <div className="mt-5 space-y-3 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  {formatCurrency(room.pricePerNight)} x {nights} nights
+                  {formatCurrency(room.pricePerNight, hotel.currency)} x {nights} nights
                 </span>
-                <span>{formatCurrency(subtotal)}</span>
+                <span>{formatCurrency(subtotal, hotel.currency)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Taxes & Fees</span>
-                <span>{formatCurrency(taxes)}</span>
+                <span>{formatCurrency(taxes, hotel.currency)}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
                 <span>Total</span>
-                <span>{formatCurrency(total)}</span>
+                <span>{formatCurrency(total, hotel.currency)}</span>
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-purple-50 p-3 text-sm text-purple-700">
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
               <Sparkles className="h-4 w-4" />
-              You&apos;ll earn{" "}
-              <strong>{formatNumber(totalPoints)}</strong> Bonvoy points
+              Best rate guaranteed when you book direct.
             </div>
 
             <button
               onClick={() => setConfirmed(true)}
-              className="mt-4 w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              className="mt-4 w-full rounded-xl bg-stone-900 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-black"
             >
-              Confirm Booking — {formatCurrency(total)}
+              Confirm Booking — {formatCurrency(total, hotel.currency)}
             </button>
 
             <p className="mt-3 text-center text-xs text-muted-foreground">

@@ -24,9 +24,9 @@ const nudges: Nudge[] = [
     id: "points",
     icon: <Sparkles className="h-4 w-4" />,
     message:
-      "You'll earn 42,000 Bonvoy points with this booking — enough for a free night!",
+      "Book direct and unlock complimentary breakfast and a free room upgrade when available.",
     type: "points",
-    color: "bg-purple-50 border-purple-200 text-purple-800",
+    color: "bg-amber-50 border-amber-200 text-amber-900",
   },
   {
     id: "savings",

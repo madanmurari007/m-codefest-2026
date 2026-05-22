@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
+import { getModel, getOpenAI, logOpenAIError } from "@/lib/openai";
 
 const FALLBACK_ANALYSES: Record<
   string,
@@ -35,36 +36,40 @@ const FALLBACK_ANALYSES: Record<
   },
 };
 
+function fallbackByUrl(imageUrl: string | undefined) {
+  const isDataUrl = imageUrl?.startsWith("data:");
+  let category = "beach";
+  if (!isDataUrl && imageUrl) {
+    const url = imageUrl.toLowerCase();
+    if (url.includes("mountain") || url.includes("snow") || url.includes("519681")) {
+      category = "mountain";
+    } else if (url.includes("city") || url.includes("skyline") || url.includes("480714")) {
+      category = "city";
+    } else if (url.includes("forest") || url.includes("tree") || url.includes("504893")) {
+      category = "forest";
+    }
+  }
+  return FALLBACK_ANALYSES[category];
+}
+
 export async function POST(request: NextRequest) {
   const { imageUrl } = await request.json();
 
-  if (!process.env.OPENAI_API_KEY) {
-    const isDataUrl = imageUrl?.startsWith("data:");
-    let category = "beach";
-
-    if (!isDataUrl && imageUrl) {
-      const url = imageUrl.toLowerCase();
-      if (url.includes("mountain") || url.includes("snow") || url.includes("519681")) {
-        category = "mountain";
-      } else if (url.includes("city") || url.includes("skyline") || url.includes("480714")) {
-        category = "city";
-      } else if (url.includes("forest") || url.includes("tree") || url.includes("504893")) {
-        category = "forest";
-      }
-    }
-
-    return Response.json({ analysis: FALLBACK_ANALYSES[category] });
+  const openai = getOpenAI();
+  if (!openai) {
+    return Response.json({
+      analysis: fallbackByUrl(imageUrl),
+      source: "fallback-no-key",
+    });
   }
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
     const imageContent: OpenAI.Chat.Completions.ChatCompletionContentPart = imageUrl.startsWith("data:")
       ? { type: "image_url", image_url: { url: imageUrl, detail: "low" } }
       : { type: "image_url", image_url: { url: imageUrl, detail: "low" } };
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: getModel(),
       messages: [
         {
           role: "system",
@@ -95,11 +100,18 @@ Respond as JSON: {"mood":"...","scenery":[...],"activities":[...],"description":
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const analysis = JSON.parse(jsonMatch[0]);
-      return Response.json({ analysis });
+      return Response.json({ analysis, source: "llm" });
     }
 
-    return Response.json({ analysis: FALLBACK_ANALYSES.beach });
-  } catch {
-    return Response.json({ analysis: FALLBACK_ANALYSES.beach });
+    return Response.json({
+      analysis: fallbackByUrl(imageUrl),
+      source: "fallback-no-json",
+    });
+  } catch (err) {
+    logOpenAIError("analyze-image", err);
+    return Response.json({
+      analysis: fallbackByUrl(imageUrl),
+      source: "fallback-error",
+    });
   }
 }
