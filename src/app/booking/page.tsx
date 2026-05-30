@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -22,15 +22,87 @@ import {
   getDefaultCheckOut,
 } from "@/lib/utils";
 import BookingNudge from "@/components/BookingNudge";
+import type { Hotel, RoomType } from "@/lib/types";
+
+const AI_HOTEL_STORAGE_PREFIX = "ai-hotel:";
+
+/**
+ * Module-level cache so `useSyncExternalStore` returns a stable reference
+ * across re-renders (otherwise React throws "result of getSnapshot should
+ * be cached to avoid an infinite loop"). Mirrors the pattern used in
+ * `/hotels/[id]/page.tsx`.
+ */
+const aiHotelCache = new Map<string, Hotel | null>();
+
+function loadAIHotelCached(id: string): Hotel | null {
+  if (typeof window === "undefined") return null;
+  if (aiHotelCache.has(id)) return aiHotelCache.get(id) ?? null;
+  let parsed: Hotel | null = null;
+  try {
+    const raw = sessionStorage.getItem(`${AI_HOTEL_STORAGE_PREFIX}${id}`);
+    parsed = raw ? (JSON.parse(raw) as Hotel) : null;
+  } catch {
+    parsed = null;
+  }
+  aiHotelCache.set(id, parsed);
+  return parsed;
+}
+
+const noopSubscribe = () => () => {};
+
+/**
+ * AI hotels arrive without rooms — synthesize a Signature/Suite pair so the
+ * booking summary still renders. Kept in sync with `/hotels/[id]/page.tsx`.
+ */
+function synthesizeRooms(hotel: Hotel): RoomType[] {
+  const base = hotel.pricePerNight;
+  return [
+    {
+      id: `${hotel.id}-r1`,
+      name: "Signature Room",
+      description: `Comfortable signature room at ${hotel.name} with all the on-property essentials.`,
+      pricePerNight: base,
+      maxGuests: 2,
+      bedType: "King",
+      size: "40 sqm",
+      image: hotel.image,
+      amenities: hotel.amenities.slice(0, 4),
+    },
+    {
+      id: `${hotel.id}-r2`,
+      name: "Suite",
+      description: `Upgraded suite with a larger layout and elevated amenities.`,
+      pricePerNight: Math.round(base * 1.65),
+      maxGuests: 3,
+      bedType: "King + Sofa",
+      size: "75 sqm",
+      image: hotel.image,
+      amenities: hotel.amenities.slice(0, 6),
+    },
+  ];
+}
 
 function BookingContent() {
   const searchParams = useSearchParams();
   const hotelId = searchParams.get("hotel") || hotels[0].id;
   const roomId = searchParams.get("room");
+  const isAi = hotelId.startsWith("ai-");
 
-  const hotel = hotels.find((h) => h.id === hotelId) || hotels[0];
-  const room =
-    hotel.roomTypes.find((r) => r.id === roomId) || hotel.roomTypes[0];
+  // AI hotels live in sessionStorage (written by HotelCard on click).
+  const aiHotel = useSyncExternalStore(
+    noopSubscribe,
+    () => (isAi ? loadAIHotelCached(hotelId) : null),
+    () => null,
+  );
+
+  const catalogHotel = isAi
+    ? null
+    : hotels.find((h) => h.id === hotelId) ?? null;
+
+  const hotel = catalogHotel ?? aiHotel ?? hotels[0];
+  const roomTypes =
+    hotel.roomTypes.length > 0 ? hotel.roomTypes : synthesizeRooms(hotel);
+  const room = roomTypes.find((r) => r.id === roomId) || roomTypes[0];
 
   const [checkIn, setCheckIn] = useState(getDefaultCheckIn());
   const [checkOut, setCheckOut] = useState(getDefaultCheckOut());

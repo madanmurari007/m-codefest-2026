@@ -373,22 +373,12 @@ export default function HotelDetailPage({
                   {room.name}
                 </div>
 
-                {isAi ? (
-                  <button
-                    disabled
-                    title="AI-curated property — booking is a demo only"
-                    className="mt-4 block w-full cursor-not-allowed rounded-xl bg-stone-900/80 py-3.5 text-center text-sm font-semibold text-white"
-                  >
-                    Inquire to Book
-                  </button>
-                ) : (
-                  <Link
-                    href={`/booking?hotel=${hotel.id}&room=${room.id}`}
-                    className="mt-4 block w-full rounded-xl bg-stone-900 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-black"
-                  >
-                    Book This Room
-                  </Link>
-                )}
+                <Link
+                  href={`/booking?hotel=${hotel.id}&room=${room.id}`}
+                  className="mt-4 block w-full rounded-xl bg-stone-900 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-black"
+                >
+                  Book Now
+                </Link>
 
                 <p className="mt-3 text-center text-xs text-muted-foreground">
                   Free cancellation up to 48 hours before check-in
